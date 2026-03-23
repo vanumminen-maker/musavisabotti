@@ -34,17 +34,23 @@ export async function getSoundCloudInfo(url: string): Promise<SoundCloudTrack[]>
 
     if (result.type === 'track') {
       const track = result as any;
+      console.log('SoundCloud track metadata raw:', JSON.stringify({ 
+        name: track.name, 
+        user: track.user?.username,
+        publisher: track.publisher_metadata?.artist 
+      }));
+      
       return [{
-        artist: track.user.username,
-        title: track.name,
+        artist: track.user?.username || track.publisher_metadata?.artist || 'SoundCloud Artist',
+        title: track.name || 'SoundCloud Track',
         url: track.url,
       }];
     } else if (result.type === 'playlist') {
       const playlist = result as any;
       const tracks = await playlist.all_tracks();
       return tracks.map((t: any) => ({
-        artist: t.user.username,
-        title: t.name,
+        artist: t.user?.username || t.publisher_metadata?.artist || 'SoundCloud Artist',
+        title: t.name || 'SoundCloud Track',
         url: t.url,
       }));
     }

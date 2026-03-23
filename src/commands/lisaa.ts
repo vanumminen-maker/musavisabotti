@@ -33,8 +33,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     for (const s of addedSongs) {
       state.songs.push({
-        artist: s.artist.trim().toLowerCase(),
-        title: s.title.trim().toLowerCase(),
+        artist: (s.artist || 'Tuntematon Artisti').trim().toLowerCase(),
+        title: (s.title || 'Tuntematon Biisi').trim().toLowerCase(),
         url: s.url,
         addedBy: interaction.user.id,
       });
