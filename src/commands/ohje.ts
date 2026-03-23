@@ -9,13 +9,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     .setTitle('🎵 Musavisabotti – Käyttöohjeet')
     .setColor(0x5865f2)
     .setDescription(
-      'Musiikkitietovisa Discord-äänikanavalla! Botti soittaa **Spotifyn 30 sekunnin pätkiä** ja pelaajat arvaavat artistin ja/tai kappaleen nimen.',
+      'Musiikkitietovisa Discord-äänikanavalla! Botti soittaa **SoundCloud-biisejä** ja pelaajat arvaavat artistin ja/tai kappaleen nimen.',
     )
     .addFields(
       {
         name: '📋 Valmistelu (ylläpitäjä)',
         value: [
-          '`/lisää url` – Lisää biisi, albumi tai soittolista Spotifysta',
+          '`/lisää url` – Lisää biisi tai soittolista SoundCloudista',
           '`/lista` – Näytä lisätyt biiset',
           '`/poista numero` – Poista biisi listalta',
         ].join('\n'),

@@ -1,5 +1,6 @@
-import { createAudioResource } from '@discordjs/voice';
+import { createAudioResource, StreamType } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
+import play from 'play-dl';
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
 import type { Message } from 'discord.js';
@@ -25,9 +26,12 @@ export async function startNextSong(
   state.firstCorrectUser = null;
 
   try {
-    console.log(`Toistetaan Spotify-esikatselu: ${song.url}`);
-
-    const resource = createAudioResource(song.url, { 
+    console.log(`Toistetaan SoundCloud-biisi: ${song.url}`);
+    
+    // Toista SoundCloud-biisi play-dl:n avulla
+    const stream = await play.stream(song.url);
+    const resource = createAudioResource(stream.stream, { 
+      inputType: stream.type,
       inlineVolume: true 
     });
     

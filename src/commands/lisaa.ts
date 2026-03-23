@@ -1,12 +1,12 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { getState } from '../game/state';
-import { getTrackInfo, getPlaylistTracks, getAlbumTracks, SpotifyTrack } from '../game/spotify';
+import { getSoundCloudInfo } from '../game/soundcloud';
 
 export const data = new SlashCommandBuilder()
   .setName('lisää')
-  .setDescription('Lisää biisi, albumi tai soittolista Spotifysta')
+  .setDescription('Lisää biisi tai soittolista SoundCloudista')
   .addStringOption((o) =>
-    o.setName('url').setDescription('Spotify-linkki biisiin, albumiin tai soittolistaan').setRequired(true),
+    o.setName('url').setDescription('SoundCloud-linkki biisiin tai settiin').setRequired(true),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -18,31 +18,16 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   try {
     const state = getState(interaction.guildId);
-    let addedSongs: SpotifyTrack[] = [];
-
-    if (url.includes('spotify.com/track/')) {
-      const trackId = url.split('track/')[1].split('?')[0];
-      const info = await getTrackInfo(trackId);
-      if (!info.previewUrl) {
-        await interaction.editReply('❌ Tällä biisillä ei ole 30s esikatselupätkää Spotifyssa. Valitse toinen biisi.');
-        return;
-      }
-      addedSongs.push(info);
-    } else if (url.includes('spotify.com/playlist/')) {
-      const playlistId = url.split('playlist/')[1].split('?')[0];
-      const tracks = await getPlaylistTracks(playlistId);
-      addedSongs = tracks;
-    } else if (url.includes('spotify.com/album/')) {
-      const albumId = url.split('album/')[1].split('?')[0];
-      const tracks = await getAlbumTracks(albumId);
-      addedSongs = tracks;
-    } else {
-      await interaction.editReply('❌ Anna kelvollinen Spotify-linkki (track, playlist tai album)!');
+    
+    if (!url.includes('soundcloud.com/')) {
+      await interaction.editReply('❌ Anna kelvollinen SoundCloud-linkki!');
       return;
     }
 
+    const addedSongs = await getSoundCloudInfo(url);
+
     if (addedSongs.length === 0) {
-      await interaction.editReply('❌ Mitään biisejä ei löytynyt (varmista että niissä on 30s esikatselut).');
+      await interaction.editReply('❌ Mitään biisejä ei löytynyt.');
       return;
     }
 
@@ -50,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       state.songs.push({
         artist: s.artist.trim().toLowerCase(),
         title: s.title.trim().toLowerCase(),
-        url: s.previewUrl!,
+        url: s.url,
         addedBy: interaction.user.id,
       });
     }
@@ -60,7 +45,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       `✅ Lisätty **${addedSongs.length}** biisiä.\n📋 Sinun listallasi on nyt **${mySongs.length}** biisiä.`
     );
   } catch (error: any) {
-    console.error('Spotify-lisäysvirhe:', error);
+    console.error('SoundCloud-lisäysvirhe:', error);
     await interaction.editReply(`❌ Virhe: ${error.message}`);
   }
 }
