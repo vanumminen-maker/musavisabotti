@@ -9,6 +9,7 @@ export interface Song {
 
 export interface GameState {
   songs: Song[];
+  musicQueue: Song[];
   currentSong: Song | null;
   scores: Map<string, number>;
   firstCorrectUser: string | null;
@@ -17,6 +18,7 @@ export interface GameState {
   timer: ReturnType<typeof setTimeout> | null;
   textChannelId: string | null;
   isActive: boolean;
+  mode: 'QUIZ' | 'MUSIC' | null;
 }
 
 const states = new Map<string, GameState>();
@@ -24,6 +26,7 @@ const states = new Map<string, GameState>();
 function createEmptyState(): GameState {
   return {
     songs: [],
+    musicQueue: [],
     currentSong: null,
     scores: new Map(),
     firstCorrectUser: null,
@@ -32,6 +35,7 @@ function createEmptyState(): GameState {
     timer: null,
     textChannelId: null,
     isActive: false,
+    mode: null,
   };
 }
 

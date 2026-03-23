@@ -13,38 +13,33 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     )
     .addFields(
       {
-        name: '📋 Valmistelu (ylläpitäjä)',
+        name: '🎮 1. Musavisa (Kilpailu)',
         value: [
-          '`/lisää url` – Lisää biisi tai soittolista SoundCloudista',
-          '`/lista` – Näytä lisätyt biiset',
-          '`/poista numero` – Poista biisi listalta',
-        ].join('\n'),
-      },
-      {
-        name: '🎮 Pelin kulku (ylläpitäjä)',
-        value: [
-          '`/musavisa` – Aloita peli (liity ensin äänikanavalle!)',
+          '`/lisää url` – Lisää biisi/lista visaan',
+          '`/musavisa` – Aloita visa (30s per biisi)',
           '`/next` – Seuraava biisi',
-          '`/stop` – Keskeytä biisi ja paljasta vastaus',
-          '`/lopeta` – Lopeta peli ja julkaise tulokset',
+          '`/stop` – Paljasta vastaus',
+          '`/lopeta` – Lopeta visa ja katso tulokset',
         ].join('\n'),
       },
       {
-        name: '🏆 Pisteytysjärjestelmä',
+        name: '🎧 2. Musiikin kuuntelu',
         value: [
-          '**2 pistettä** – Artisti ja kappale oikein',
-          '**1 piste** – Jompikumpi oikein',
-          '**+1 bonuspiste** ⚡ – Ensimmäinen oikea vastaus',
-          'Botti hyväksyy pienet kirjoitusvirheet automaattisesti.',
+          '`/liity` – Kutsu botti kanavalle kuuntelemaan',
+          '`/jono url` – Lisää biisi/lista jonoon',
+          '`/skip` – Seuraava biisi',
+          '`/skip jono` – Tyhjennä koko jono',
+          '`/pause` / `/play` – Pysäytä ja jatka',
+          '`/poistu` – Lopeta ja poistu',
         ].join('\n'),
+      },
+      {
+        name: '🏆 Pisteytys (Visassa)',
+        value: 'Artisti + kappale = **2p** | Toinen oikein = **1p**\nNopeusbonus ⚡ = **+1p** ensimmäiselle oikein arvanneelle.',
       },
       {
         name: '💬 Arvaaminen',
-        value: 'Kirjoita arvauksesi normaalina viestinä tälle kanavalle – ei huutomerkkejä tai komentoja!',
-      },
-      {
-        name: '📊 Muut komennot',
-        value: '`/leaderboard` – Katso pisteet kesken pelin',
+        value: 'Kirjoita arvauksesi tekstiviestinä kanavalle. Botti hyväksyy pienet kirjoitusvirheet!',
       },
     )
     .setFooter({ text: 'Hauskaa pelailua! 🎶' });

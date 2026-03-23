@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { createAudioPlayer, joinVoiceChannel, entersState, VoiceConnectionStatus } from '@discordjs/voice';
 import { getState } from '../game/state';
-import { startNextSong } from '../game/play';
+import { startNextSong, ensurePlayer } from '../game/play';
 
 export const data = new SlashCommandBuilder()
   .setName('musavisa')
@@ -73,17 +73,8 @@ export async function execute(
     console.error('Voice connection error:', error);
   });
 
-  const player = createAudioPlayer();
-  player.on('error', (error) => {
-    console.error('Audio player error:', error);
-  });
-  
-  player.on('stateChange', (oldState, newState) => {
-    console.log(`Audio player state updated: ${oldState.status} -> ${newState.status}`);
-  });
-
+  const player = ensurePlayer(interaction.guildId, client);
   connection.subscribe(player);
-  state.player = player;
   state.connection = connection;
 
   try {

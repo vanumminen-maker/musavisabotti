@@ -1,72 +1,54 @@
 # Musavisabotti – Käyttöohjeet
 
-Discord-botti musiikkitietovisaan. Botti liittyy äänikanavalle ja soittaa **SoundCloud**-musiikkia. Pelaajat arvaavat artistin ja/tai kappaleen nimen tekstikanavalla.
-
-## 1. Discord Developer Portal
-
-1. Mene osoitteeseen [discord.com/developers/applications](https://discord.com/developers/applications)
-2. Klikkaa **New Application** → anna nimi (esim. "Musavisabotti") → Create
-3. Vasemmasta valikosta: **Bot** → **Add Bot**
-4. **Token**: Klikkaa **Reset Token** → kopioi token → tallenna `.env`-tiedostoon
-5. **Privileged Gateway Intents** – laita päälle:
-   - ✅ Server Members Intent
-   - ✅ Message Content Intent
-6. **OAuth2 → URL Generator**:
-   - Scopes: `bot`, `applications.commands`
-   - Bot Permissions: `Connect`, `Speak`, `Send Messages`, `Read Message History`
-   - Kopioi URL → liitä selaimeen → kutsu botti serverille
-
-## 2. SoundCloud-käyttö
-
-SoundCloud ei vaadi erillisiä avaimia tai kirjautumista botilta. Se on tällä hetkellä helpoin ja vakain tapa käyttää visabottia! Voit etsiä soittolistoja (sets) tai yksittäisiä biisejä SoundCloudista ja lisätä ne suoraan peliin.
+Discord-botti musiikkiin ja visailuun. Botti tukee kahta tilaa: **Musavisa** (kilpailu) ja **Musiikin kuuntelu** (normaali soitto).
 
 ---
 
-## Paikallinen kehitys
+## 🎮 Osa 1: Musavisa (Musiikkitietovisa)
 
-```bash
-# 1. Asenna riippuvuudet
-npm install
+Tässä tilassa botti soittaa 30 sekunnin pätkiä biiseistä, ja pelaajat arvaavat artistin ja kappaleen nimen.
 
-# 2. Luo .env tiedosto
-cp .env.example .env
+### Visan valmistelu
+1. Etsi SoundCloudista biisejä tai soittolistoja.
+2. Käytä `/lisää url: [linkki]` lisätäksesi ne visalistaan.
+3. `/lista` näyttää kaikki lisätyt biisit.
+4. `/poista numero` poistaa tietyn biisin listalta.
 
-# 3. Rekisteröi slash-komennot
-npm run deploy
+### Visan pelaaminen
+1. Liity ensin äänikanavalle.
+2. Käytä `/musavisa` aloittaaksesi pelin.
+3. Botti soittaa biisin. Kirjoita arvaus tekstikanavalle.
+4. `/next` siirtyy seuraavaan biisiin.
+5. `/stop` paljastaa vastauksen heti.
+6. `/lopeta` päättää pelin ja julkaisee lopulliset pisteet.
 
-# 4. Käynnistä
-npm run start
-```
-
----
-
-## Railway-deployment
-
-1. Pushaa koodi GitHubiin.
-2. Railway buildaa automaattisesti.
-3. Asetukset → **Variables** – lisää:
-   - `DISCORD_TOKEN` = botin token
-   - `CLIENT_ID` = Application ID
+**Pisteytys:**
+- 2p: Artisti ja kappale molemmat oikein.
+- 1p: Toinen niistä oikein.
+- +1p ⚡: Nopeusbonus ensimmäiselle oikein arvaajalle.
 
 ---
 
-## Komennot
+## 🎧 Osa 2: Musiikin kuuntelu (Normal mode)
 
-| Komento | Kuvaus | Oikeus |
-|---|---|---|
-| `/lisää url` | Lisää biisi tai soittolista SoundCloudista | Manage Messages |
-| `/lista` | Näytä biisilista | Manage Messages |
-| `/poista numero` | Poista biisi listalta | Manage Messages |
-| `/musavisa` | Aloita peli (liittyy vc:lle) | Manage Messages |
-| `/stop` | Keskeytä biisi, paljasta vastaus | Manage Messages |
-| `/next` | Seuraava biisi | Manage Messages |
-| `/lopeta` | Lopeta peli + leaderboard | Manage Messages |
-| `/leaderboard` | Pisteet kesken pelin | Kaikki |
-| `/ohje` | Näytä ohjeet Discordissa | Kaikki |
+Tässä tilassa voit kuunnella musiikkia koko pituudeltaan ja hallita yhteistä jonoa.
+
+### Käyttö
+1. `/liity`: Kutsu botti kanavalle ja vaihda musiikkitilaan.
+2. `/jono url: [linkki]`: Lisää biisi tai soittolista yhteiseen jonoon.
+3. `/pause` / `/play`: Pysäytä ja jatka musiikkia.
+4. `/skip`: Hyppää seuraavaan biisiin jonossa.
+5. `/skip kohde: jono`: Tyhjennä koko jono kerralla.
+6. `/poistu`: Botti poistuu kanavalta ja nollaa kaikki tilat.
 
 ---
 
-## Esimerkki biisien lisäämisestä:
-1. Mene [SoundCloudiin](https://soundcloud.com) ja etsi biisi tai soittolista.
-2. Kopioi linkki (esim. `https://soundcloud.com/user/track-name`).
-3. Käytä botin komentoa: `/lisää url: https://soundcloud.com/...`
+## 🛠️ Tekninen asennus (Ylläpitäjä)
+
+1. Lisää `DISCORD_TOKEN` ja `CLIENT_ID` (Application ID) Railwayn muuttujiin.
+2. Pushaa koodi GitHubiin.
+3. Muista ajaa `npm run deploy` kerran uusien komentojen rekisteröimiseksi.
+
+---
+
+Nauti musiikista ja onnea kisaan! 🎶🦾✨
