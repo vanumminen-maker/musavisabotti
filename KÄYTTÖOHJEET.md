@@ -1,8 +1,8 @@
 # Musavisabotti – Käyttöohjeet
 
-Discord-botti musiikkitietovisaan. Botti liittyy äänikanavalle ja soittaa YouTube-musiikkia. Pelaajat arvaavat artistin ja/tai kappaleen nimen tekstikanavalla.
+Discord-botti musiikkitietovisaan. Botti liittyy äänikanavalle ja soittaa **Spotify-esikatselupätkiä (30s)**. Pelaajat arvaavat artistin ja/tai kappaleen nimen tekstikanavalla.
 
-## Ennen käyttöä: Discord Developer Portal
+## 1. Discord Developer Portal
 
 1. Mene osoitteeseen [discord.com/developers/applications](https://discord.com/developers/applications)
 2. Klikkaa **New Application** → anna nimi (esim. "Musavisabotti") → Create
@@ -13,8 +13,16 @@ Discord-botti musiikkitietovisaan. Botti liittyy äänikanavalle ja soittaa YouT
    - ✅ Message Content Intent
 6. **OAuth2 → URL Generator**:
    - Scopes: `bot`, `applications.commands`
-   - Bot Permissions: `Connect`, `Speak`, `Send Messages`, `Read Message History`, `Manage Messages`
+   - Bot Permissions: `Connect`, `Speak`, `Send Messages`, `Read Message History`
    - Kopioi URL → liitä selaimeen → kutsu botti serverille
+
+## 2. Spotify Developer Dashboard
+
+Jotta botti voi hakea biisien tiedot, se tarvitsee Spotify-avaimet:
+1. Kirjaudu [Spotify Developer Dashboardiin](https://developer.spotify.com/dashboard).
+2. Luo uusi appi (**Create App**) ja anna sille nimi.
+3. **Redirect URIs**: Laita `http://localhost:8888` (tätä ei käytetä, mutta Spotify vaatii sen).
+4. Tallenna ja ota talteen **Client ID** ja **Client Secret**.
 
 ---
 
@@ -43,7 +51,8 @@ npm run start
 2. Luo uusi projekti Railwayssa → **Deploy from GitHub repo**
 3. Asetukset → **Variables** – lisää:
    - `DISCORD_TOKEN` = botin token
-   - `CLIENT_ID` = Application ID (Developer Portalista)
+   - `SPOTIFY_CLIENT_ID` = Spotifyn Client ID (Dashboardista)
+- `SPOTIFY_CLIENT_SECRET` = Spotifyn Client Secret (Dashboardista)
 4. Railway buildaa automaattisesti Dockerfilen avulla
 
 > **Huom:** Slash-komennot pitää rekisteröidä erikseen. Voit tehdä sen paikallisesti ennen deploymenttia tai lisätä `npm run deploy` Railway:n build-komentoon.
@@ -54,7 +63,7 @@ npm run start
 
 | Komento | Kuvaus | Oikeus |
 |---|---|---|
-| `/lisää artisti kappale url` | Lisää biisi listalle | Manage Messages |
+| `/lisää url` | Lisää biisi, albumi tai soittolista Spotifysta | Manage Messages |
 | `/lista` | Näytä biisilista | Manage Messages |
 | `/poista numero` | Poista biisi listalta | Manage Messages |
 | `/musavisa` | Aloita peli (liittyy vc:lle) | Manage Messages |
@@ -77,9 +86,10 @@ npm run start
 ## Pelauksen kulku
 
 1. **Rakenna biisilista ennen peliä:**
+   Kopioi linkki Spotifysta (Oikea klikkaus -> Share -> Copy Song/Playlist Link)
    ```
-   /lisää Darude Sandstorm https://www.youtube.com/watch?v=...
-   /lisää Nightwish Ghost Love Score https://youtu.be/...
+   /lisää url: https://open.spotify.com/track/...
+   /lisää url: https://open.spotify.com/playlist/...
    ```
 2. **Aloita peli** (liity ensin äänikanavalle!):
    ```
@@ -108,9 +118,9 @@ npm run start
 - Varmista että olet äänikanavalla ennen `/musavisa`-komennon käyttöä
 - Tarkista Railway-lokit: `ffmpeg` pitää olla asennettuna (Dockerfile hoitaa tämän automaattisesti)
 
-**"Virhe biisin lataamisessa":**
-- Tarkista että YouTube-linkki on voimassa ja video on julkinen
-- Jotkut videot voivat olla alueellisesti rajoitettuja
+**"Virhe biisin lataamisessa" tai "Ei esikatselua":**
+- Kaikista Spotify-biiseistä ei ole saatavilla 30s esikatselua (esim. jotkut uutuudet tai alueellisesti rajoitetut). Valitse toinen biisi.
+- Varmista, että `SPOTIFY_CLIENT_ID` ja `SECRET` on asetettu oikein.
 
 **Slash-komennot eivät näy:**
 - Aja `npm run deploy` kerran paikallisesti tai lisää se build-komentoon
