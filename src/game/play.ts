@@ -38,11 +38,12 @@ export async function startNextSong(
       dumpSingleJson: true,
       noPlaylist: true,
       format: 'bestaudio',
-      // The 'android' and 'tv' clients are often less restricted than 'ios' or 'web'.
-      extractorArgs: 'youtube:player_client=android,tv,web',
+      // 'mweb' and 'web_embedded' are sometimes the only ones that work on cloud IPs.
+      extractorArgs: 'youtube:player_client=mweb,web_embedded,android',
       // Ensure it can find node/nodejs for JS execution
       jsRuntimes: 'node',
       noCheckCertificates: true,
+      forceIpv4: true,
     } as any) as any;
 
     if (!info || !info.url) {
