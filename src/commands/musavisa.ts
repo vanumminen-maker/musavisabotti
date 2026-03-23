@@ -5,7 +5,7 @@ import {
   EmbedBuilder,
   Client,
 } from 'discord.js';
-import { createAudioPlayer, joinVoiceChannel } from '@discordjs/voice';
+import { createAudioPlayer, joinVoiceChannel, entersState, VoiceConnectionStatus } from '@discordjs/voice';
 import { getState } from '../game/state';
 import { startNextSong } from '../game/play';
 
@@ -65,10 +65,35 @@ export async function execute(
     selfDeaf: true,
   });
 
+  connection.on('stateChange', (oldState, newState) => {
+    console.log(`Voice connection state: ${oldState.status} -> ${newState.status}`);
+  });
+
+  connection.on('error', (error) => {
+    console.error('Voice connection error:', error);
+  });
+
   const player = createAudioPlayer();
+  player.on('error', (error) => {
+    console.error('Audio player error:', error);
+  });
+  
   connection.subscribe(player);
   state.player = player;
   state.connection = connection;
+
+  try {
+    // Wait up to 15 seconds for the connection to become ready
+    await entersState(connection, VoiceConnectionStatus.Ready, 15_000);
+  } catch (error) {
+    console.error('Botti ei pystynyt yhdistämään äänikanavalle ajoissa:', error);
+    connection.destroy();
+    state.isActive = false;
+    state.connection = null;
+    state.player = null;
+    await interaction.editReply('❌ Botti ei voinut muodostaa yhteyttä (verkko-ongelma). Kokeile myöhemmin uudelleen!');
+    return;
+  }
 
   // Play first song
   const result = await startNextSong(interaction.guildId, client);
