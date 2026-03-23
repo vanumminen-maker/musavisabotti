@@ -1,7 +1,6 @@
 import { createAudioResource, StreamType } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
-import { create as createYtdl } from 'youtube-dl-exec';
-const ytdlexec = createYtdl('yt-dlp');
+import { spawn } from 'child_process';
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
 import type { Message } from 'discord.js';
@@ -9,9 +8,8 @@ import type { Message } from 'discord.js';
 const ROUND_DURATION_MS = 30_000;
 
 /**
- * Picks a random song from the list, streams it via play-dl,
+ * Picks a random song from the list, streams it via yt-dlp,
  * and starts the 30-second countdown timer.
- * Assumes state.player and state.connection are already set up.
  */
 export async function startNextSong(
   guildId: string,
@@ -31,25 +29,41 @@ export async function startNextSong(
   state.currentSong = song;
   state.firstCorrectUser = null;
 
-  // Stream audio via youtube-dl-exec (yt-dlp) Direct extraction
   try {
     const startFetch = Date.now();
-    const process = ytdlexec(song.url, {
-      dumpSingleJson: true,
-      noPlaylist: true,
-      format: 'bestaudio/best',
-      // OAuth2 is the "gold standard" to bypass all bot detection and DRM issues.
-      username: 'oauth2',
-      jsRuntimes: 'node',
-      noCheckCertificates: true,
-      forceIpv4: true,
-    } as any) as any;
 
-    if (process.subprocess && process.subprocess.stderr) {
-      process.subprocess.stderr.on('data', (data: Buffer) => {
-        const output = data.toString();
-        // Look for the code: "and enter the code XXX-XXX-XXX"
-        const match = output.match(/enter the code ([A-Z0-9-]{8,})/);
+    // Use native spawn for better control over unbuffered stderr (required for OAuth2)
+    const info = await new Promise<any>((resolve, reject) => {
+      const args = [
+        song.url,
+        '--dump-single-json',
+        '--no-playlist',
+        '--format', 'bestaudio/best',
+        '--username', 'oauth2',
+        '--js-runtimes', 'node',
+        '--no-check-certificates',
+        '--force-ipv4',
+      ];
+
+      console.log(`Executing: yt-dlp ${args.join(' ')}`);
+      const child = spawn('yt-dlp', args);
+      
+      let stdoutData = '';
+      let stderrData = '';
+
+      const timeout = setTimeout(() => {
+        child.kill();
+        reject(new Error('YouTube-haku aikakatkaistiin (60s). Olethan nopea koodin syöttämisessä!'));
+      }, 60000);
+
+      child.stdout.on('data', (chunk) => { stdoutData += chunk.toString(); });
+      child.stderr.on('data', (chunk) => {
+        const msg = chunk.toString();
+        stderrData += msg;
+        console.log(`[yt-dlp stderr] ${msg}`);
+
+        // Look for the OAuth2 code: "and enter the code XXX-XXX-XXX"
+        const match = msg.match(/enter the code ([A-Z0-9-]{8,})/);
         if (match && match[1]) {
           const code = match[1];
           const channel = client.channels.cache.get(state.textChannelId!) as TextChannel | null;
@@ -57,29 +71,44 @@ export async function startNextSong(
             `🔑 **YouTube-tunnistautuminen vaaditaan!**\n\n` +
               `1️⃣ Mene osoitteeseen: **https://www.google.com/device**\n` +
               `2️⃣ Syötä koodi: \`${code}\`\n\n` +
-              `*Tämä on tehtävä n. kerran päivässä, jotta YouTube sallii botin soittaa musiikkia.*`,
+              `*Tähän on aikaa noin minuutti peli-istunnon sisällä.*`,
           ).catch(console.error);
         }
-        console.log(`[yt-dlp stderr] ${output}`);
       });
-    }
 
-    const info = await process;
+      child.on('close', (code) => {
+        clearTimeout(timeout);
+        if (code === 0) {
+          try {
+            resolve(JSON.parse(stdoutData));
+          } catch (e) {
+            reject(new Error('Virhe YouTuben vastauksen lukemisessa (JSON parse failure).'));
+          }
+        } else {
+          const lastError = stderrData.split('\n').filter(l => l.includes('ERROR:')).pop() || 'Tuntematon virhe';
+          reject(new Error(`yt-dlp virhe: ${lastError}`));
+        }
+      });
+
+      child.on('error', (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+    });
 
     if (!info || !info.url) {
-      console.error('yt-dlp info object summary:', info ? 'Object returned but no URL' : 'Null info');
       throw new Error('yt-dlp failed to extract a direct playback URL.');
     }
 
     console.log(`URL extracted in ${Date.now() - startFetch}ms`);
 
-    // Use FFmpeg (Arbitrary) to read the remote URL directly natively. Extremely stable.
+    // Use FFmpeg (Arbitrary) to read the remote URL directly natively.
     const resource = createAudioResource(info.url, { inputType: StreamType.Arbitrary });
     state.player!.play(resource);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Virhe äänivirran luomisessa:', err);
     state.currentSong = null;
-    return { success: false, error: `Virhe biisin lataamisessa. Tarkista URL: ${song.url}` };
+    return { success: false, error: err.message || `Virhe biisin lataamisessa: ${song.url}` };
   }
 
   const textChannelId = state.textChannelId!;
@@ -103,7 +132,6 @@ export async function startNextSong(
 
 /**
  * Called on every messageCreate event.
- * Checks if the message is a valid guess and awards points.
  */
 export async function handleGuess(message: Message, client: Client): Promise<void> {
   const guildId = message.guildId!;
