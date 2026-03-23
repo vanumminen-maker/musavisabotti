@@ -38,8 +38,9 @@ export async function startNextSong(
       dumpSingleJson: true,
       noPlaylist: true,
       format: 'bestaudio/best',
-      // 'tv' and 'web_embedded' are currently the most reliable for bypassing PO-Token requirements.
-      extractorArgs: 'youtube:player_client=tv,web_embedded',
+      // OAuth2 is the "gold standard" to bypass all bot detection and DRM issues.
+      // It will print a code in the logs that the user must enter at google.com/device.
+      username: 'oauth2',
       // Ensure it can find node/nodejs for JS execution
       jsRuntimes: 'node',
       noCheckCertificates: true,
