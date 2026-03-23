@@ -34,25 +34,39 @@ export async function getSoundCloudInfo(url: string): Promise<SoundCloudTrack[]>
 
     if (result.type === 'track') {
       const track = result as any;
-      console.log('SoundCloud track metadata raw:', JSON.stringify({ 
-        name: track.name, 
-        user: track.user?.username,
-        publisher: track.publisher_metadata?.artist 
-      }));
+      
+      // Tarkempi haku artistille
+      const artist = track.publisher_metadata?.artist || 
+                     track.user?.username || 
+                     track.user?.full_name || 
+                     track.permalink?.split('/')[3] || 
+                     'SoundCloud Artist';
+
+      console.log(`Haku onnistui: "${artist} - ${track.name}"`);
+      if (artist === 'SoundCloud Artist') {
+        console.log('VAROITUS: Artistia ei löytynyt, koko track-objekti:', JSON.stringify(track).substring(0, 1000));
+      }
       
       return [{
-        artist: track.user?.username || track.publisher_metadata?.artist || 'SoundCloud Artist',
+        artist: artist,
         title: track.name || 'SoundCloud Track',
         url: track.url,
       }];
     } else if (result.type === 'playlist') {
       const playlist = result as any;
+      console.log(`Haetaan soittolistan biisit (${playlist.name})...`);
       const tracks = await playlist.all_tracks();
-      return tracks.map((t: any) => ({
-        artist: t.user?.username || t.publisher_metadata?.artist || 'SoundCloud Artist',
-        title: t.name || 'SoundCloud Track',
-        url: t.url,
-      }));
+      return tracks.map((t: any) => {
+        const artist = t.publisher_metadata?.artist || 
+                       t.user?.username || 
+                       t.user?.full_name || 
+                       'SoundCloud Artist';
+        return {
+          artist: artist,
+          title: t.name || 'SoundCloud Track',
+          url: t.url,
+        };
+      });
     }
   } catch (err: any) {
     console.error(`Virhe SoundCloud-tietojen haussa (${url}):`, err.message);
