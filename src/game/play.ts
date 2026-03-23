@@ -40,6 +40,7 @@ export async function startNextSong(
     }) as any;
 
     if (!info || !info.url) {
+      console.error('yt-dlp info object:', JSON.stringify(info, null, 2));
       throw new Error('yt-dlp failed to extract a direct playback URL.');
     }
 
