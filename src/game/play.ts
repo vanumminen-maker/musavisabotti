@@ -37,6 +37,7 @@ export async function startNextSong(
       format: 'bestaudio[ext=webm+acodec=opus+asr=48000]/bestaudio',
       limitRate: '100K',
       quiet: true,
+      noPlaylist: true,
     }, { stdio: ['ignore', 'pipe', 'ignore'] });
 
     if (!subprocess.stdout) {
