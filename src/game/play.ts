@@ -34,21 +34,40 @@ export async function startNextSong(
   // Stream audio via youtube-dl-exec (yt-dlp) Direct extraction
   try {
     const startFetch = Date.now();
-    const info = await ytdlexec(song.url, {
+    const process = ytdlexec(song.url, {
       dumpSingleJson: true,
       noPlaylist: true,
       format: 'bestaudio/best',
       // OAuth2 is the "gold standard" to bypass all bot detection and DRM issues.
-      // It will print a code in the logs that the user must enter at google.com/device.
       username: 'oauth2',
-      // Ensure it can find node/nodejs for JS execution
       jsRuntimes: 'node',
       noCheckCertificates: true,
       forceIpv4: true,
     } as any) as any;
 
+    if (process.subprocess && process.subprocess.stderr) {
+      process.subprocess.stderr.on('data', (data: Buffer) => {
+        const output = data.toString();
+        // Look for the code: "and enter the code XXX-XXX-XXX"
+        const match = output.match(/enter the code ([A-Z0-9-]{8,})/);
+        if (match && match[1]) {
+          const code = match[1];
+          const channel = client.channels.cache.get(state.textChannelId!) as TextChannel | null;
+          channel?.send(
+            `🔑 **YouTube-tunnistautuminen vaaditaan!**\n\n` +
+              `1️⃣ Mene osoitteeseen: **https://www.google.com/device**\n` +
+              `2️⃣ Syötä koodi: \`${code}\`\n\n` +
+              `*Tämä on tehtävä n. kerran päivässä, jotta YouTube sallii botin soittaa musiikkia.*`,
+          ).catch(console.error);
+        }
+        console.log(`[yt-dlp stderr] ${output}`);
+      });
+    }
+
+    const info = await process;
+
     if (!info || !info.url) {
-      console.error('yt-dlp info object:', JSON.stringify(info, null, 2));
+      console.error('yt-dlp info object summary:', info ? 'Object returned but no URL' : 'Null info');
       throw new Error('yt-dlp failed to extract a direct playback URL.');
     }
 
