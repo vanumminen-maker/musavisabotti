@@ -38,10 +38,11 @@ export async function startNextSong(
       dumpSingleJson: true,
       noPlaylist: true,
       format: 'bestaudio',
-      // The 'ios' client often bypasses the "Sign in to confirm you're not a bot" wall.
-      extractorArgs: 'youtube:player_client=ios,web',
+      // The 'android' and 'tv' clients are often less restricted than 'ios' or 'web'.
+      extractorArgs: 'youtube:player_client=android,tv,web',
       // Ensure it can find node/nodejs for JS execution
       jsRuntimes: 'node',
+      noCheckCertificates: true,
     } as any) as any;
 
     if (!info || !info.url) {
