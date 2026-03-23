@@ -1,6 +1,7 @@
 import { createAudioResource, StreamType } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
-import { exec as ytdlexec } from 'youtube-dl-exec';
+import { create as createYtdl } from 'youtube-dl-exec';
+const ytdlexec = createYtdl('yt-dlp');
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
 import type { Message } from 'discord.js';
@@ -37,8 +38,11 @@ export async function startNextSong(
       dumpSingleJson: true,
       noPlaylist: true,
       format: 'bestaudio',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    }) as any;
+      // The 'ios' client often bypasses the "Sign in to confirm you're not a bot" wall.
+      extractorArgs: 'youtube:player_client=ios,web',
+      // Ensure it can find node/nodejs for JS execution
+      jsRuntimes: 'node',
+    } as any) as any;
 
     if (!info || !info.url) {
       console.error('yt-dlp info object:', JSON.stringify(info, null, 2));

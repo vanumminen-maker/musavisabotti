@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 RUN /opt/venv/bin/pip install --upgrade pip yt-dlp
 ENV PATH="/opt/venv/bin:$PATH"
+RUN ln -s /usr/local/bin/node /usr/local/bin/nodejs
 
 COPY package*.json ./
 RUN npm install
