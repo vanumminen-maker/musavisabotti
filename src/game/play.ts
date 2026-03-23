@@ -30,12 +30,12 @@ export async function startNextSong(
   state.currentSong = song;
   state.firstCorrectUser = null;
 
-  // Stream audio via youtube-dl-exec (yt-dlp) native WebM Opus stream
+  // Stream audio via youtube-dl-exec (yt-dlp)
   try {
     const subprocess = ytdlexec(song.url, {
       output: '-',
-      format: 'bestaudio[ext=webm+acodec=opus+asr=48000]/bestaudio',
-      limitRate: '100K',
+      format: 'bestaudio',
+      limitRate: '1M',
       quiet: true,
       noPlaylist: true,
     }, { stdio: ['ignore', 'pipe', 'inherit'] });
@@ -52,8 +52,8 @@ export async function startNextSong(
       console.error('Virhe toistettaessa videota (yt-dlp stdout):', err);
     });
 
-    // WebM Opus natively supports Discord Voice! Skip FFmpeg.
-    const resource = createAudioResource(subprocess.stdout, { inputType: StreamType.WebmOpus, inlineVolume: false });
+    // Use FFmpeg (Arbitrary) to safely parse yt-dlp stdout pipe instead of fragile WebmDemuxer
+    const resource = createAudioResource(subprocess.stdout, { inputType: StreamType.Arbitrary });
     state.player!.play(resource);
   } catch (err) {
     console.error('Virhe äänivirran luomisessa:', err);
