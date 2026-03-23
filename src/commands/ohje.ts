@@ -9,13 +9,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     .setTitle('🎵 Musavisabotti – Käyttöohjeet')
     .setColor(0x5865f2)
     .setDescription(
-      'Musiikkitietovisa Discord-äänikanavalla! Ylläpitäjä soittaa biisejä ja pelaajat arvaavat artistin ja/tai kappaleen nimen.',
+      'Musiikkitietovisa Discord-äänikanavalla! Botti soittaa **Spotifyn 30 sekunnin pätkiä** ja pelaajat arvaavat artistin ja/tai kappaleen nimen.',
     )
     .addFields(
       {
         name: '📋 Valmistelu (ylläpitäjä)',
         value: [
-          '`/lisää artisti kappale url` – Lisää biisi listalle YouTube-linkillä',
+          '`/lisää url` – Lisää biisi, albumi tai soittolista Spotifysta',
           '`/lista` – Näytä lisätyt biiset',
           '`/poista numero` – Poista biisi listalta',
         ].join('\n'),
@@ -35,16 +35,15 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           '**2 pistettä** – Artisti ja kappale oikein',
           '**1 piste** – Jompikumpi oikein',
           '**+1 bonuspiste** ⚡ – Ensimmäinen oikea vastaus',
+          'Botti hyväksyy pienet kirjoitusvirheet automaattisesti.',
         ].join('\n'),
       },
       {
         name: '💬 Arvaaminen',
-        value:
-          'Kirjoita arvauksesi normaalina tekstiviestinä tähän kanavalle – ei slash-komentoja!\n' +
-          'Pienet kirjoitusvirheet ovat ok, botti tunnistaa ne automaattisesti.',
+        value: 'Kirjoita arvauksesi normaalina viestinä tälle kanavalle – ei huutomerkkejä tai komentoja!',
       },
       {
-        name: '📊 Kesken pelin',
+        name: '📊 Muut komennot',
         value: '`/leaderboard` – Katso pisteet kesken pelin',
       },
     )
