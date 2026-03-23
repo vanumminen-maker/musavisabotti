@@ -37,9 +37,9 @@ export async function startNextSong(
     const info = await ytdlexec(song.url, {
       dumpSingleJson: true,
       noPlaylist: true,
-      format: 'bestaudio',
-      // 'mweb' and 'web_embedded' are sometimes the only ones that work on cloud IPs.
-      extractorArgs: 'youtube:player_client=mweb,web_embedded,android',
+      format: 'bestaudio/best',
+      // 'tv' and 'web_embedded' are currently the most reliable for bypassing PO-Token requirements.
+      extractorArgs: 'youtube:player_client=tv,web_embedded',
       // Ensure it can find node/nodejs for JS execution
       jsRuntimes: 'node',
       noCheckCertificates: true,
