@@ -68,10 +68,11 @@ export async function startNextSong(
           const code = match[1];
           const channel = client.channels.cache.get(state.textChannelId!) as TextChannel | null;
           channel?.send(
-            `🔑 **YouTube-tunnistautuminen vaaditaan!**\n\n` +
-              `1️⃣ Mene osoitteeseen: **https://www.google.com/device**\n` +
-              `2️⃣ Syötä koodi: \`${code}\`\n\n` +
-              `*Tähän on aikaa noin minuutti peli-istunnon sisällä.*`,
+            `🔑 **Botti tarvitsee YouTuben vahvistuksen!**\n\n` +
+              `1️⃣ Klikkaa tätä linkkiä: **https://www.google.com/device**\n` +
+              `2️⃣ Kirjaudu sisään Google-tililläsi (tarvittaessa).\n` +
+              `3️⃣ Syötä tämä koodi aukeavaan ikkunaan: **\`${code}\`**\n\n` +
+              `*Tämä vahvistaa YouTubelle, ettet ole robotti ja sallii musiikin soittamisen.*`,
           ).catch(console.error);
         }
       });
