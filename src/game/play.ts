@@ -31,24 +31,35 @@ export async function startNextSong(
   try {
     console.log(`Extracting URL for: ${song.url}`);
     
-    // Check for optional cookies in environment variables
-    const cookieString = process.env.YOUTUBE_COOKIES;
+    // Check for optional cookies (JSON array or raw string)
+    const cookieInput = process.env.YOUTUBE_COOKIES;
     let agent;
-    if (cookieString) {
+    if (cookieInput) {
       try {
-        const cookies = JSON.parse(cookieString);
+        let cookies;
+        if (cookieInput.trim().startsWith('[')) {
+          cookies = JSON.parse(cookieInput);
+        } else {
+          // Parse raw cookie string into ytdl objects
+          cookies = cookieInput.split(';').map(c => {
+            const [name, ...value] = c.trim().split('=');
+            return { name, value: value.join('='), domain: '.youtube.com', path: '/' };
+          });
+        }
         agent = ytdl.createAgent(cookies);
         console.log('Using YOUTUBE_COOKIES agent for extraction.');
       } catch (e) {
-        console.error('Virhe YOUTUBE_COOKIES luku yrityksessä (odotettiin JSON-taulukkoa).');
+        console.error('Virhe YOUTUBE_COOKIES käsittelyssä:', e);
       }
     }
 
     const info = await ytdl.getInfo(song.url, agent ? { agent } : undefined);
+    
+    // Broaden format selection: prefer best audio, fallback to anything playable
     const format = ytdl.chooseFormat(info.formats, { 
-      quality: 'highestaudio', 
-      filter: 'audioonly' 
-    });
+      quality: 'highestaudio',
+      filter: (f) => f.hasAudio
+    }) || info.formats.find(f => f.hasAudio);
 
     if (!format || !format.url) {
       throw new Error('Ytdl-core ei löytänyt sopivaa ääniformaattia.');
