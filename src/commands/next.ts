@@ -10,10 +10,6 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
   client: Client,
 ): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId) return;
 
   const state = getState(interaction.guildId);
@@ -23,6 +19,11 @@ export async function execute(
       content: '🎮 Ei aktiivista peliä. Aloita `/musavisa`-komennolla.',
       ephemeral: true,
     });
+    return;
+  }
+
+  if (interaction.user.id !== state.hostId) {
+    await interaction.reply({ content: '❌ Vain visan vetäjä voi siirtyä seuraavaan biisiin!', ephemeral: true });
     return;
   }
 

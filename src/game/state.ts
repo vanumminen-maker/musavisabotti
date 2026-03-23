@@ -10,14 +10,18 @@ export interface Song {
 export interface GameState {
   songs: Song[];
   musicQueue: Song[];
+  currentQuizSongs: Song[];
   currentSong: Song | null;
   scores: Map<string, number>;
   firstCorrectUser: string | null;
+  solvedArtistBy: Set<string>;
+  solvedTitleBy: Set<string>;
   player: AudioPlayer | null;
   connection: VoiceConnection | null;
   timer: ReturnType<typeof setTimeout> | null;
   textChannelId: string | null;
   isActive: boolean;
+  hostId: string | null;
   mode: 'QUIZ' | 'MUSIC' | null;
 }
 
@@ -27,6 +31,7 @@ function createEmptyState(): GameState {
   return {
     songs: [],
     musicQueue: [],
+    currentQuizSongs: [],
     currentSong: null,
     scores: new Map(),
     firstCorrectUser: null,
@@ -35,6 +40,9 @@ function createEmptyState(): GameState {
     timer: null,
     textChannelId: null,
     isActive: false,
+    solvedArtistBy: new Set(),
+    solvedTitleBy: new Set(),
+    hostId: null,
     mode: null,
   };
 }

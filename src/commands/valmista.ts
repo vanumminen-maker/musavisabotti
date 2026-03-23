@@ -1,30 +1,30 @@
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
-  PermissionFlagsBits,
   Client,
   EmbedBuilder,
 } from 'discord.js';
 import { getState, fullReset } from '../game/state';
 
 export const data = new SlashCommandBuilder()
-  .setName('lopeta')
-  .setDescription('Lopeta musiikkitietovisa ja julkaise tulokset');
+  .setName('valmista')
+  .setDescription('Lopeta musiikkitietovisa ja julkaise tulokset (vain visan vetäjä)');
 
 export async function execute(
   interaction: ChatInputCommandInteraction,
   client: Client,
 ): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId) return;
 
   const state = getState(interaction.guildId);
 
   if (!state.isActive) {
     await interaction.reply({ content: '🎮 Ei aktiivista peliä.', ephemeral: true });
+    return;
+  }
+
+  if (interaction.user.id !== state.hostId) {
+    await interaction.reply({ content: '❌ Vain visan vetäjä voi lopettaa pelin!', ephemeral: true });
     return;
   }
 

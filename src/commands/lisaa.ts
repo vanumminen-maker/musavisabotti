@@ -7,12 +7,21 @@ export const data = new SlashCommandBuilder()
   .setDescription('Lisää biisi tai soittolista SoundCloudista')
   .addStringOption((o) =>
     o.setName('url').setDescription('SoundCloud-linkki biisiin tai settiin').setRequired(true),
+  )
+  .addStringOption((o) =>
+    o.setName('artisti').setDescription('Pelin hyväksymä artistin nimi (valinnainen)').setRequired(false),
+  )
+  .addStringOption((o) =>
+    o.setName('kappale').setDescription('Pelin hyväksymä kappaleen nimi (valinnainen)').setRequired(false),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   if (!interaction.guildId) return;
 
   const url = interaction.options.getString('url', true).trim();
+  const manualArtist = interaction.options.getString('artisti')?.trim();
+  const manualTitle = interaction.options.getString('kappale')?.trim();
+
   console.log(`Käyttäjä yritti lisätä linkin: ${url}`);
   await interaction.deferReply({ ephemeral: true });
 
@@ -32,9 +41,14 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     for (const s of addedSongs) {
+      // Jos lisätään vain yksi biisi ja käyttäjä antoi nimet käsin, käytä niitä.
+      // Jos lisätään soittolista, käytä SoundCloudin nimiä.
+      const artist = (addedSongs.length === 1 && manualArtist) ? manualArtist : (s.artist || 'Tuntematon Artisti');
+      const title = (addedSongs.length === 1 && manualTitle) ? manualTitle : (s.title || 'Tuntematon Biisi');
+
       state.songs.push({
-        artist: (s.artist || 'Tuntematon Artisti').trim().toLowerCase(),
-        title: (s.title || 'Tuntematon Biisi').trim().toLowerCase(),
+        artist: artist.trim().toLowerCase(),
+        title: title.trim().toLowerCase(),
         url: s.url,
         addedBy: interaction.user.id,
       });

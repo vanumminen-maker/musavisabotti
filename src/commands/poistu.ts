@@ -9,5 +9,5 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   if (!interaction.guildId) return;
   
   fullReset(interaction.guildId);
-  await interaction.reply('👋 Heippa! Jono tyhjennetty ja peli lopetettu.');
+  await interaction.reply('🤘 Kiitos jameista ja palataan! PS. Tykitellään');
 }

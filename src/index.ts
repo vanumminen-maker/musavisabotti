@@ -7,9 +7,9 @@ import * as lisaaCmd from './commands/lisaa';
 import * as listaCmd from './commands/lista';
 import * as poistaCmd from './commands/poista';
 import * as musavisaCmd from './commands/musavisa';
-import * as stopCmd from './commands/stop';
+import * as spoilerCmd from './commands/spoiler';
 import * as nextCmd from './commands/next';
-import * as lopetaCmd from './commands/lopeta';
+import * as valmistaCmd from './commands/valmista';
 import * as leaderboardCmd from './commands/leaderboard';
 import * as ohjeCmd from './commands/ohje';
 import * as liityCmd from './commands/liity';
@@ -40,9 +40,9 @@ for (const cmd of [
   listaCmd,
   poistaCmd,
   musavisaCmd,
-  stopCmd,
+  spoilerCmd,
   nextCmd,
-  lopetaCmd,
+  valmistaCmd,
   leaderboardCmd,
   ohjeCmd,
   liityCmd,

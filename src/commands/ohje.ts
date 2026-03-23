@@ -15,17 +15,17 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       {
         name: '🎮 1. Musavisa (Kilpailu)',
         value: [
-          '`/lisää url` – Lisää biisi/lista visaan',
-          '`/musavisa` – Aloita visa (30s per biisi)',
+          '`/lisää url [artisti] [kappale]` – Lisää biisi visaan',
+          '`/musavisa` – Aloita oma visasi (30s per biisi)',
           '`/next` – Seuraava biisi',
-          '`/stop` – Paljasta vastaus',
-          '`/lopeta` – Lopeta visa ja katso tulokset',
+          '`/spoiler` – Paljasta vastaus (vain vetäjä)',
+          '`/valmista` – Lopeta visa ja katso tulokset',
         ].join('\n'),
       },
       {
         name: '🎧 2. Musiikin kuuntelu',
         value: [
-          '`/liity` – Kutsu botti kanavalle kuuntelemaan',
+          '`/liity` – Kutsu botti kanavalle soittamaan musiikkia',
           '`/jono url` – Lisää biisi/lista jonoon',
           '`/skip` – Seuraava biisi',
           '`/skip jono` – Tyhjennä koko jono',

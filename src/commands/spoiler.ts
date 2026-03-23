@@ -1,21 +1,22 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { getState, stopCurrentSong } from '../game/state';
 
 export const data = new SlashCommandBuilder()
-  .setName('stop')
-  .setDescription('Keskeytä nykyinen biisi ja paljasta vastaus (peli jatkuu)');
+  .setName('spoiler')
+  .setDescription('Paljasta nykyinen biisi (vain visan vetäjä)');
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId) return;
 
   const state = getState(interaction.guildId);
 
   if (!state.isActive) {
     await interaction.reply({ content: '🎮 Ei aktiivista peliä.', ephemeral: true });
+    return;
+  }
+
+  if (interaction.user.id !== state.hostId) {
+    await interaction.reply({ content: '❌ Vain visan vetäjä voi paljastaa vastauksen!', ephemeral: true });
     return;
   }
 
@@ -28,10 +29,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   }
 
   const song = state.currentSong;
+  state.solvedArtistBy.add(interaction.user.id);
+  state.solvedTitleBy.add(interaction.user.id);
   stopCurrentSong(interaction.guildId);
 
   await interaction.reply(
-    `⏹️ Biisi pysäytetty. Se oli: **${song.artist} – ${song.title}**\n` +
-      `Käytä \`/next\` seuraavaan biisiin tai \`/lopeta\` lopettaaksesi pelin.`,
+    `⏹️ Biisi paljastettu! Se oli: **${song.artist} – ${song.title}**\n` +
+      `Käytä \`/next\` seuraavaan biisiin tai \`/valmista\` lopettaaksesi pelin.`,
   );
 }

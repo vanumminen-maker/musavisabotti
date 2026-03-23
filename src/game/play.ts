@@ -1,9 +1,8 @@
 import { createAudioResource, StreamType, AudioPlayerStatus, createAudioPlayer } from '@discordjs/voice';
-import { Client, TextChannel } from 'discord.js';
+import { Client, TextChannel, Message } from 'discord.js';
 import play from 'play-dl';
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
-import type { Message } from 'discord.js';
 
 const ROUND_DURATION_MS = 30_000;
 
@@ -92,13 +91,15 @@ export async function startNextSong(
   state.mode = 'QUIZ';
   stopCurrentSong(guildId);
 
-  if (state.songs.length === 0) {
-    return { success: false, error: 'Biisilista on tyhjä!' };
+  if (state.currentQuizSongs.length === 0) {
+    return { success: false, error: 'Visalistan biisit loppuivat!' };
   }
 
-  const song = state.songs[Math.floor(Math.random() * state.songs.length)];
+  const song = state.currentQuizSongs[Math.floor(Math.random() * state.currentQuizSongs.length)];
   state.currentSong = song;
   state.firstCorrectUser = null;
+  state.solvedArtistBy = new Set();
+  state.solvedTitleBy = new Set();
 
   try {
     console.log(`Toistetaan SoundCloud-biisi (Visa): ${song.url}`);
@@ -125,12 +126,15 @@ export async function startNextSong(
     const s = getState(guildId);
     if (!s.currentSong || !s.isActive) return;
     const revealedSong = s.currentSong;
+    
+    // Check if both were already solved by everyone (or just revealed)
+    // Actually, at the end of 30s we always show the answer if it's not the end of the game.
     stopCurrentSong(guildId);
 
     const channel = client.channels.cache.get(textChannelId) as TextChannel | null;
     await channel?.send(
       `⏰ **Aika loppui!** Biisi oli: **${revealedSong.artist} – ${revealedSong.title}**\n` +
-        `Käytä \`/next\` seuraavaan biisiin tai \`/lopeta\` lopettaaksesi pelin.`,
+        `Käytä \`/next\` seuraavaan biisiin tai \`/valmista\` lopettaaksesi pelin.`,
     );
   }, ROUND_DURATION_MS);
 
@@ -152,9 +156,31 @@ export async function handleGuess(message: Message, client: Client): Promise<voi
 
   if (!artistMatch && !titleMatch) return;
 
+  // Jos viesti sisältää oikean vastauksen, poistetaan se heti jotta muut eivät näe sitä
+  await message.delete().catch(() => {});
+
   const userId = message.author.id;
+  const alreadySolvedArtist = state.solvedArtistBy.has(userId);
+  const alreadySolvedTitle = state.solvedTitleBy.has(userId);
+
+  let points = 0;
+  let partStr = '';
+
+  if (artistMatch && !alreadySolvedArtist) {
+    state.solvedArtistBy.add(userId);
+    points += 1;
+    partStr = 'artisti';
+  }
+  if (titleMatch && !alreadySolvedTitle) {
+    state.solvedTitleBy.add(userId);
+    points += 1;
+    partStr = partStr ? 'artisti & kappale' : 'kappale';
+  }
+
+  // Jos käyttäjä ei saanut uusia pisteitä (arvasi jo aiemmin saman), ei vastata mitään
+  if (points === 0) return;
+
   const currentScore = state.scores.get(userId) ?? 0;
-  const points = artistMatch && titleMatch ? 2 : 1;
   let bonus = 0;
   if (!state.firstCorrectUser) {
     state.firstCorrectUser = userId;
@@ -163,15 +189,11 @@ export async function handleGuess(message: Message, client: Client): Promise<voi
 
   state.scores.set(userId, currentScore + points + bonus);
   const songInfo = state.currentSong;
-  stopCurrentSong(guildId);
-
   const name = message.member?.displayName ?? message.author.username;
-  const partStr = artistMatch && titleMatch ? 'artisti & kappale' : artistMatch ? 'artisti' : 'kappale';
   const bonusStr = bonus ? ' + ⚡ **nopeusbonus**' : '';
 
-  await message.reply(
+  await (message.channel as TextChannel).send(
     `🎉 **${name}** arvasi oikein! (${partStr}) → **${points + bonus} pistettä**${bonusStr}\n` +
-      `🎵 Biisi oli: **${songInfo.artist} – ${songInfo.title}**\n` +
-      `Käytä \`/next\` seuraavaan biisiin tai \`/lopeta\` lopettaaksesi pelin.`,
+      `🎵 Vastaus: ||${songInfo.artist} – ${songInfo.title}||`,
   );
 }

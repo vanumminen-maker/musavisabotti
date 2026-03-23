@@ -17,25 +17,24 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
   client: Client,
 ): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId || !interaction.guild) return;
 
   const state = getState(interaction.guildId);
 
   if (state.isActive) {
     await interaction.reply({
-      content: '🎮 Peli on jo käynnissä! Käytä `/next` tai `/lopeta`.',
+      content: '🎮 Peli on jo käynnissä! Käytä `/next` tai `/valmista`.',
       ephemeral: true,
     });
     return;
   }
 
-  if (state.songs.length === 0) {
+  // Filter songs for this user
+  const mySongs = state.songs.filter((s) => s.addedBy === interaction.user.id);
+
+  if (mySongs.length === 0) {
     await interaction.reply({
-      content: '📭 Biisilista on tyhjä! Lisää biisejä `/lisää`-komennolla.',
+      content: '📭 Sinulla ei ole vielä biisejä visalistallasi! Lisää niitä `/lisää`-komennolla.',
       ephemeral: true,
     });
     return;
@@ -56,6 +55,8 @@ export async function execute(
   state.isActive = true;
   state.textChannelId = interaction.channelId;
   state.scores = new Map();
+  state.hostId = interaction.user.id;
+  state.currentQuizSongs = [...mySongs];
 
   // Join voice
   const connection = joinVoiceChannel({
@@ -105,6 +106,7 @@ export async function execute(
     .setTitle('🎵 Musavisa alkaa!')
     .setDescription(
       `Botti liittyi äänikanavalle **${voiceChannel.name}**.\n\n` +
+        `Vetäjä: **${interaction.user.username}**\n` +
         `Arvaa artisti ja/tai kappaleen nimi kirjoittamalla tähän kanavalle.\n\n` +
         `⏰ **30 sekuntia** per biisi!`,
     )
@@ -113,7 +115,7 @@ export async function execute(
       name: '🏆 Pisteytysjärjestelmä',
       value: 'Artisti + kappale = **2p** | Toinen = **1p** | Nopeusbonus ⚡ = **+1p**',
     })
-    .setFooter({ text: `Biisejä listalla: ${state.songs.length}` });
+    .setFooter({ text: `Biisejä visassa: ${state.currentQuizSongs.length}` });
 
   await interaction.editReply({ embeds: [embed] });
 }
