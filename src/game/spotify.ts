@@ -43,12 +43,17 @@ export interface SpotifyTrack {
 }
 
 export async function getTrackInfo(trackId: string): Promise<SpotifyTrack> {
+  console.log(`Haetaan biisiä id:llä: "${trackId}"`);
   const token = await getAccessToken();
   const response = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!response.ok) throw new Error('Biisiä ei löytynyt Spotifysta.');
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`Spotify API virhe (track): ${response.status} ${response.statusText}`, errText);
+    throw new Error(`Biisiä ei löytynyt Spotifysta (${response.status}).`);
+  }
 
   const data = (await response.json()) as any;
   return {
@@ -60,12 +65,17 @@ export async function getTrackInfo(trackId: string): Promise<SpotifyTrack> {
 }
 
 export async function getPlaylistTracks(playlistId: string): Promise<SpotifyTrack[]> {
+  console.log(`Haetaan soittolistaa id:llä: "${playlistId}"`);
   const token = await getAccessToken();
   const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!response.ok) throw new Error('Soittolistaa ei löytynyt Spotifysta.');
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`Spotify API virhe (playlist): ${response.status} ${response.statusText}`, errText);
+    throw new Error(`Soittolistaa ei löytynyt Spotifysta (${response.status}).`);
+  }
 
   const data = (await response.json()) as any;
   return data.items
@@ -79,12 +89,17 @@ export async function getPlaylistTracks(playlistId: string): Promise<SpotifyTrac
 }
 
 export async function getAlbumTracks(albumId: string): Promise<SpotifyTrack[]> {
+  console.log(`Haetaan albumia id:llä: "${albumId}"`);
   const token = await getAccessToken();
   const response = await fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!response.ok) throw new Error('Albumia ei löytynyt Spotifysta.');
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`Spotify API virhe (album): ${response.status} ${response.statusText}`, errText);
+    throw new Error(`Albumia ei löytynyt Spotifysta (${response.status}).`);
+  }
 
   const data = (await response.json()) as any;
   return data.items

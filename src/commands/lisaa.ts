@@ -13,6 +13,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   if (!interaction.guildId) return;
 
   const url = interaction.options.getString('url', true).trim();
+  console.log(`Käyttäjä yritti lisätä linkin: ${url}`);
   await interaction.deferReply({ ephemeral: true });
 
   try {
