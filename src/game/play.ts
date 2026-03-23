@@ -7,6 +7,18 @@ import type { Message } from 'discord.js';
 
 const ROUND_DURATION_MS = 30_000;
 
+// SoundCloud-valtuutus streamingia varten
+async function ensureSoundCloudAuthorized() {
+  try {
+    if (!play.is_logged_in) {
+      const clientId = await play.getFreeClientID();
+      await play.setToken({ soundcloud: { client_id: clientId } });
+    }
+  } catch (err) {
+    console.error('SoundCloud streaming authorization failed:', err);
+  }
+}
+
 /**
  * Picks a random song from the list and starts the game round.
  */
@@ -27,6 +39,9 @@ export async function startNextSong(
 
   try {
     console.log(`Toistetaan SoundCloud-biisi: ${song.url}`);
+    
+    // Varmista valtuutus
+    await ensureSoundCloudAuthorized();
     
     // Toista SoundCloud-biisi play-dl:n avulla
     const stream = await play.stream(song.url);
