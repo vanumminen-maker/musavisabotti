@@ -38,7 +38,7 @@ export async function startNextSong(
       limitRate: '100K',
       quiet: true,
       noPlaylist: true,
-    }, { stdio: ['ignore', 'pipe', 'ignore'] });
+    }, { stdio: ['ignore', 'pipe', 'inherit'] });
 
     if (!subprocess.stdout) {
       throw new Error('yt-dlp failed to create a stdout stream');
