@@ -78,6 +78,10 @@ export async function execute(
     console.error('Audio player error:', error);
   });
   
+  player.on('stateChange', (oldState, newState) => {
+    console.log(`Audio player state updated: ${oldState.status} -> ${newState.status}`);
+  });
+
   connection.subscribe(player);
   state.player = player;
   state.connection = connection;
