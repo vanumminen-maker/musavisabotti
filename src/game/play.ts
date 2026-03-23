@@ -8,12 +8,14 @@ import type { Message } from 'discord.js';
 const ROUND_DURATION_MS = 30_000;
 
 // SoundCloud-valtuutus streamingia varten
+let soundcloudAuthorized = false;
 async function ensureSoundCloudAuthorized() {
+  if (soundcloudAuthorized) return;
   try {
-    if (!play.is_logged_in) {
-      const clientId = await play.getFreeClientID();
-      await play.setToken({ soundcloud: { client_id: clientId } });
-    }
+    const clientId = await play.getFreeClientID();
+    await play.setToken({ soundcloud: { client_id: clientId } });
+    soundcloudAuthorized = true;
+    console.log('SoundCloud streaming authorized.');
   } catch (err) {
     console.error('SoundCloud streaming authorization failed:', err);
   }
