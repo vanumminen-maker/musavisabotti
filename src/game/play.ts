@@ -40,6 +40,7 @@ export async function startNextSong(
         '--no-playlist',
         '--format', 'bestaudio/best',
         '--username', 'oauth2',
+        '--password', '',
         '--js-runtimes', 'node',
         '--no-check-certificates',
         '--force-ipv4',
