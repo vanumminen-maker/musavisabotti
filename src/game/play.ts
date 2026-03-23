@@ -1,6 +1,6 @@
 import { createAudioResource } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
-import playdl from 'play-dl';
+import ytdl from '@distube/ytdl-core';
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
 import type { Message } from 'discord.js';
@@ -30,10 +30,20 @@ export async function startNextSong(
   state.currentSong = song;
   state.firstCorrectUser = null;
 
-  // Stream audio via play-dl
+  // Stream audio via @distube/ytdl-core
   try {
-    const stream = await playdl.stream(song.url, { quality: 2 });
-    const resource = createAudioResource(stream.stream, { inputType: stream.type });
+    const stream = ytdl(song.url, {
+      filter: 'audioonly',
+      highWaterMark: 1 << 25,
+      quality: 'highestaudio',
+    });
+    
+    // ytdl-core streams sometimes throw errors mid-playback
+    stream.on('error', (err) => {
+      console.error('Virhe toistettaessa videota:', err);
+    });
+
+    const resource = createAudioResource(stream, { inputType: undefined });
     state.player!.play(resource);
   } catch (err) {
     console.error('Virhe äänivirran luomisessa:', err);
