@@ -1,4 +1,4 @@
-import { createAudioResource } from '@discordjs/voice';
+import { createAudioResource, StreamType } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
 import ytdl from '@distube/ytdl-core';
 import { checkGuess } from './fuzzy';
@@ -43,7 +43,7 @@ export async function startNextSong(
       console.error('Virhe toistettaessa videota:', err);
     });
 
-    const resource = createAudioResource(stream, { inputType: undefined });
+    const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary });
     state.player!.play(resource);
   } catch (err) {
     console.error('Virhe äänivirran luomisessa:', err);
