@@ -10,6 +10,12 @@ import * as nextCmd from './commands/next';
 import * as lopetaCmd from './commands/lopeta';
 import * as leaderboardCmd from './commands/leaderboard';
 import * as ohjeCmd from './commands/ohje';
+import * as liityCmd from './commands/liity';
+import * as jonoCmd from './commands/jono';
+import * as skipCmd from './commands/skip';
+import * as playCmd from './commands/play';
+import * as pauseCmd from './commands/pause';
+import * as poistuCmd from './commands/poistu';
 
 const TOKEN = process.env.DISCORD_TOKEN!;
 const CLIENT_ID = process.env.CLIENT_ID!;
@@ -24,6 +30,12 @@ const commandsData = [
   lopetaCmd,
   leaderboardCmd,
   ohjeCmd,
+  liityCmd,
+  jonoCmd,
+  skipCmd,
+  playCmd,
+  pauseCmd,
+  poistuCmd,
 ].map((cmd) => cmd.data.toJSON());
 
 const rest = new REST().setToken(TOKEN);
