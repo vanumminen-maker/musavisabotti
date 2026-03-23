@@ -69,6 +69,11 @@ client.on('interactionCreate', async (interaction) => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
   if (!message.guildId) return;
+
+  if (message.content === '') {
+    console.log(`[VAROITUS] Vastaanotettiin tyhjä viesti käyttäjältä ${message.author.tag}! Onko 'Message Content Intent' kytketty päälle Discord Developer -portaalissa?`);
+  }
+
   if (message.content.startsWith('/')) return;
   await handleGuess(message, client);
 });

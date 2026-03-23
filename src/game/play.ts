@@ -30,30 +30,23 @@ export async function startNextSong(
   state.currentSong = song;
   state.firstCorrectUser = null;
 
-  // Stream audio via youtube-dl-exec (yt-dlp)
+  // Stream audio via youtube-dl-exec (yt-dlp) Direct extraction
   try {
-    const subprocess = ytdlexec(song.url, {
-      output: '-',
-      format: 'bestaudio',
-      limitRate: '1M',
-      quiet: true,
+    const startFetch = Date.now();
+    const info = await ytdlexec(song.url, {
+      dumpSingleJson: true,
       noPlaylist: true,
-    }, { stdio: ['ignore', 'pipe', 'inherit'] });
+      format: 'bestaudio',
+    }) as any;
 
-    if (!subprocess.stdout) {
-      throw new Error('yt-dlp failed to create a stdout stream');
+    if (!info || !info.url) {
+      throw new Error('yt-dlp failed to extract a direct playback URL.');
     }
 
-    subprocess.on('close', (code) => {
-      console.log('yt-dlp closed with code', code);
-    });
+    console.log(`URL extracted in ${Date.now() - startFetch}ms`);
 
-    subprocess.stdout.on('error', (err) => {
-      console.error('Virhe toistettaessa videota (yt-dlp stdout):', err);
-    });
-
-    // Use FFmpeg (Arbitrary) to safely parse yt-dlp stdout pipe instead of fragile WebmDemuxer
-    const resource = createAudioResource(subprocess.stdout, { inputType: StreamType.Arbitrary });
+    // Use FFmpeg (Arbitrary) to read the remote URL directly natively. Extremely stable.
+    const resource = createAudioResource(info.url, { inputType: StreamType.Arbitrary });
     state.player!.play(resource);
   } catch (err) {
     console.error('Virhe äänivirran luomisessa:', err);
