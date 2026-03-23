@@ -3,29 +3,26 @@ import { getState } from '../game/state';
 
 export const data = new SlashCommandBuilder()
   .setName('lista')
-  .setDescription('Näytä kaikki lisätyt biiset (vain ylläpitäjä)');
+  .setDescription('Näytä oma soittolistasi');
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId) return;
 
   const state = getState(interaction.guildId);
+  const mySongs = state.songs.filter(s => s.addedBy === interaction.user.id);
 
-  if (state.songs.length === 0) {
-    await interaction.reply({ content: '📭 Biisilista on tyhjä.', ephemeral: true });
+  if (mySongs.length === 0) {
+    await interaction.reply({ content: '📭 Sinulla ei ole vielä biisejä listallasi.', ephemeral: true });
     return;
   }
 
-  const list = state.songs.map((s, i) => `**${i + 1}.** ${s.artist} – ${s.title}`).join('\n');
+  const list = mySongs.map((s, i) => `**${i + 1}.** ${s.artist} – ${s.title}`).join('\n');
 
   const embed = new EmbedBuilder()
-    .setTitle('🎶 Biisilista')
+    .setTitle('🎶 Oma Biisilistasi')
     .setDescription(list)
     .setColor(0x5865f2)
-    .setFooter({ text: `${state.songs.length} biisiä` });
+    .setFooter({ text: `${mySongs.length} biisiä lisätty` });
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }

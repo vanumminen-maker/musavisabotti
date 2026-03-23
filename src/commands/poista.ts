@@ -3,7 +3,7 @@ import { getState } from '../game/state';
 
 export const data = new SlashCommandBuilder()
   .setName('poista')
-  .setDescription('Poista biisi listalta (vain ylläpitäjä)')
+  .setDescription('Poista biisi omalta listaltasi')
   .addIntegerOption((o) =>
     o
       .setName('numero')
@@ -13,26 +13,31 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId) return;
 
   const state = getState(interaction.guildId);
   const numero = interaction.options.getInteger('numero', true);
+  const mySongs = state.songs.filter(s => s.addedBy === interaction.user.id);
 
-  if (numero > state.songs.length) {
+  if (numero > mySongs.length) {
     await interaction.reply({
-      content: `❌ Listalla on vain **${state.songs.length}** biisiä.`,
+      content: `❌ Sinulla on listallasi vain **${mySongs.length}** biisiä.`,
       ephemeral: true,
     });
     return;
   }
 
-  const [removed] = state.songs.splice(numero - 1, 1);
+  const targetSong = mySongs[numero - 1];
+  const globalIndex = state.songs.indexOf(targetSong);
+  
+  if (globalIndex > -1) {
+    state.songs.splice(globalIndex, 1);
+  }
+
+  const remainingMySongs = state.songs.filter(s => s.addedBy === interaction.user.id);
+
   await interaction.reply({
-    content: `🗑️ Poistettu: **${removed.artist} – ${removed.title}**\n📋 Listalla nyt **${state.songs.length}** biisiä.`,
+    content: `🗑️ Poistettu: **${targetSong.artist} – ${targetSong.title}**\n📋 Sinulla on enää **${remainingMySongs.length}** biisiä.`,
     ephemeral: true,
   });
 }

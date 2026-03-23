@@ -3,7 +3,7 @@ import { getState } from '../game/state';
 
 export const data = new SlashCommandBuilder()
   .setName('lisää')
-  .setDescription('Lisää biisi musiikkivisalistaan (vain ylläpitäjä)')
+  .setDescription('Lisää biisi musiikkivisalistaan')
   .addStringOption((o) =>
     o.setName('artisti').setDescription('Artistin nimi').setRequired(true),
   )
@@ -15,10 +15,6 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
-    await interaction.reply({ content: '❌ Tarvitset **Manage Messages** -oikeuden!', ephemeral: true });
-    return;
-  }
   if (!interaction.guildId) return;
 
   const artist = interaction.options.getString('artisti', true).trim().toLowerCase();
@@ -31,10 +27,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   }
 
   const state = getState(interaction.guildId);
-  state.songs.push({ artist, title, url });
+  state.songs.push({ artist, title, url, addedBy: interaction.user.id });
 
+  const mySongs = state.songs.filter(s => s.addedBy === interaction.user.id);
   await interaction.reply({
-    content: `✅ Lisätty: **${artist} – ${title}**\n📋 Listalla nyt **${state.songs.length}** biisiä.`,
+    content: `✅ Lisätty: **${artist} – ${title}**\n📋 Sinun listallasi on nyt **${mySongs.length}** biisiä.`,
     ephemeral: true,
   });
 }

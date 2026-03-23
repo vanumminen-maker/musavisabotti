@@ -4,6 +4,7 @@ export interface Song {
   artist: string;
   title: string;
   url: string;
+  addedBy: string;
 }
 
 export interface GameState {
