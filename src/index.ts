@@ -12,6 +12,12 @@ import * as nextCmd from './commands/next';
 import * as lopetaCmd from './commands/lopeta';
 import * as leaderboardCmd from './commands/leaderboard';
 import * as ohjeCmd from './commands/ohje';
+import * as liityCmd from './commands/liity';
+import * as jonoCmd from './commands/jono';
+import * as skipCmd from './commands/skip';
+import * as playCmd from './commands/play';
+import * as pauseCmd from './commands/pause';
+import * as poistuCmd from './commands/poistu';
 
 type Command = {
   data: { name: string; toJSON(): object };
@@ -39,6 +45,12 @@ for (const cmd of [
   lopetaCmd,
   leaderboardCmd,
   ohjeCmd,
+  liityCmd,
+  jonoCmd,
+  skipCmd,
+  playCmd,
+  pauseCmd,
+  poistuCmd,
 ]) {
   commands.set(cmd.data.name, cmd as Command);
 }
