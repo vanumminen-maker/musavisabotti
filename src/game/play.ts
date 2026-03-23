@@ -23,19 +23,33 @@ async function extractWithYtDlp(url: string, cookieInput?: string): Promise<any>
       '--force-ipv4',
     ];
 
-    // If cookies are provided, write them to a temp file for yt-dlp
+    // If cookies are provided, write them in Netscape format
     let cookieFile = '';
     if (cookieInput) {
       try {
         cookieFile = path.join('/tmp', `cookies_${Date.now()}.txt`);
+        let cookieLines = ['# Netscape HTTP Cookie File'];
+
+        if (cookieInput.trim().startsWith('[')) {
+          // It's JSON
+          const json = JSON.parse(cookieInput);
+          for (const c of json) {
+            cookieLines.push(`${c.domain || '.youtube.com'}\tTRUE\t${c.path || '/'}\tTRUE\t2147483647\t${c.name}\t${c.value}`);
+          }
+        } else {
+          // It's a raw string: "name1=val1; name2=val2"
+          cookieInput.split(';').forEach(c => {
+            const parts = c.trim().split('=');
+            if (parts.length < 2) return;
+            const name = parts[0];
+            const value = parts.slice(1).join('=');
+            cookieLines.push(`.youtube.com\tTRUE\t/\tTRUE\t2147483647\t${name}\t${value}`);
+          });
+        }
         
-        // yt-dlp handles raw cookie strings best if they are in a specific header 
-        // OR as a standard Netscape file. We'll try to write it as a simple file.
-        // If it's JSON, we could convert it, but let's assume raw string for now 
-        // as requested in the latest instructions.
-        fs.writeFileSync(cookieFile, cookieInput);
+        fs.writeFileSync(cookieFile, cookieLines.join('\n'));
         args.push('--cookies', cookieFile);
-        console.log(`Using cookie file: ${cookieFile}`);
+        console.log(`Using properly formatted Netscape cookie file: ${cookieFile}`);
       } catch (e) {
         console.error('Virhe evästetiedoston luomisessa:', e);
       }
