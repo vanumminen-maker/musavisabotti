@@ -1,6 +1,8 @@
 import { createAudioResource, StreamType } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
-import ytdl from '@distube/ytdl-core';
+import { spawn } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
 import type { Message } from 'discord.js';
@@ -8,16 +10,84 @@ import type { Message } from 'discord.js';
 const ROUND_DURATION_MS = 30_000;
 
 /**
- * Picks a random song from the list, extracts a direct URL via ytdl-core,
- * and starts the 30-second countdown timer.
+ * Extracts a direct playback URL using yt-dlp with cookie support.
+ */
+async function extractWithYtDlp(url: string, cookieInput?: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const args = [
+      url,
+      '--dump-single-json',
+      '--no-playlist',
+      '--format', 'bestaudio/best',
+      '--no-check-certificates',
+      '--force-ipv4',
+    ];
+
+    // If cookies are provided, write them to a temp file for yt-dlp
+    let cookieFile = '';
+    if (cookieInput) {
+      try {
+        cookieFile = path.join('/tmp', `cookies_${Date.now()}.txt`);
+        
+        // yt-dlp handles raw cookie strings best if they are in a specific header 
+        // OR as a standard Netscape file. We'll try to write it as a simple file.
+        // If it's JSON, we could convert it, but let's assume raw string for now 
+        // as requested in the latest instructions.
+        fs.writeFileSync(cookieFile, cookieInput);
+        args.push('--cookies', cookieFile);
+        console.log(`Using cookie file: ${cookieFile}`);
+      } catch (e) {
+        console.error('Virhe evästetiedoston luomisessa:', e);
+      }
+    }
+
+    console.log(`Executing: yt-dlp ${args.map(a => a === cookieFile ? '[COOKIE_FILE]' : a).join(' ')}`);
+    const child = spawn('yt-dlp', args);
+    
+    let stdoutData = '';
+    let stderrData = '';
+
+    const timeout = setTimeout(() => {
+      child.kill();
+      if (cookieFile && fs.existsSync(cookieFile)) fs.unlinkSync(cookieFile);
+      reject(new Error('YouTube-haku aikakatkaistiin (30s).'));
+    }, 30000);
+
+    child.stdout.on('data', (chunk) => { stdoutData += chunk.toString(); });
+    child.stderr.on('data', (chunk) => { stderrData += chunk.toString(); });
+
+    child.on('close', (code) => {
+      clearTimeout(timeout);
+      if (cookieFile && fs.existsSync(cookieFile)) fs.unlinkSync(cookieFile);
+
+      if (code === 0) {
+        try {
+          resolve(JSON.parse(stdoutData));
+        } catch (e) {
+          reject(new Error('Virhe YouTuben vastauksen lukemisessa (JSON parse failure).'));
+        }
+      } else {
+        const lastError = stderrData.split('\n').filter(l => l.includes('ERROR:')).pop() || 'Tuntematon virhe';
+        reject(new Error(`yt-dlp virhe: ${lastError}`));
+      }
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timeout);
+      if (cookieFile && fs.existsSync(cookieFile)) fs.unlinkSync(cookieFile);
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Picks a random song from the list and starts the game round.
  */
 export async function startNextSong(
   guildId: string,
   client: Client,
 ): Promise<{ success: boolean; error?: string }> {
   const state = getState(guildId);
-
-  // Clear current song/timer
   stopCurrentSong(guildId);
 
   if (state.songs.length === 0) {
@@ -29,46 +99,16 @@ export async function startNextSong(
   state.firstCorrectUser = null;
 
   try {
-    console.log(`Extracting URL for: ${song.url}`);
-    
-    // Check for optional cookies (JSON array or raw string)
     const cookieInput = process.env.YOUTUBE_COOKIES;
-    let agent;
-    if (cookieInput) {
-      try {
-        let cookies;
-        if (cookieInput.trim().startsWith('[')) {
-          cookies = JSON.parse(cookieInput);
-        } else {
-          // Parse raw cookie string into ytdl objects
-          cookies = cookieInput.split(';').map(c => {
-            const [name, ...value] = c.trim().split('=');
-            return { name, value: value.join('='), domain: '.youtube.com', path: '/' };
-          });
-        }
-        agent = ytdl.createAgent(cookies);
-        console.log('Using YOUTUBE_COOKIES agent for extraction.');
-      } catch (e) {
-        console.error('Virhe YOUTUBE_COOKIES käsittelyssä:', e);
-      }
+    const info = await extractWithYtDlp(song.url, cookieInput);
+
+    if (!info || !info.url) {
+      throw new Error('yt-dlp ei löytänyt suoraa soitto-osoitetta.');
     }
 
-    const info = await ytdl.getInfo(song.url, agent ? { agent } : undefined);
-    
-    // Broaden format selection: prefer best audio, fallback to anything playable
-    const format = ytdl.chooseFormat(info.formats, { 
-      quality: 'highestaudio',
-      filter: (f) => f.hasAudio
-    }) || info.formats.find(f => f.hasAudio);
+    console.log(`URL extracted successfully via yt-dlp.`);
 
-    if (!format || !format.url) {
-      throw new Error('Ytdl-core ei löytänyt sopivaa ääniformaattia.');
-    }
-
-    console.log(`Direct URL extracted successfully.`);
-
-    // Use FFmpeg (Arbitrary) to read the remote URL directly.
-    const resource = createAudioResource(format.url, { 
+    const resource = createAudioResource(info.url, { 
       inputType: StreamType.Arbitrary,
       inlineVolume: true 
     });
@@ -77,19 +117,10 @@ export async function startNextSong(
   } catch (err: any) {
     console.error('Virhe äänivirran luomisessa:', err);
     state.currentSong = null;
-
-    let errorMsg = 'Virhe biisin lataamisessa.';
-    if (err.message?.includes('403')) {
-      errorMsg = 'YouTube estää latauksen (403). Railwayn IP-osoite on todennäköisesti väliaikaisesti estetty.';
-    } else if (err.message?.includes('Sign in')) {
-      errorMsg = 'YouTube vaatii kirjautumista tämän videon katsomiseen (Sign-in required).';
-    }
-
-    return { success: false, error: errorMsg };
+    return { success: false, error: err.message || 'Virhe biisin lataamisessa.' };
   }
 
   const textChannelId = state.textChannelId!;
-
   state.timer = setTimeout(async () => {
     const s = getState(guildId);
     if (!s.currentSong || !s.isActive) return;
@@ -123,7 +154,6 @@ export async function handleGuess(message: Message, client: Client): Promise<voi
 
   const userId = message.author.id;
   const currentScore = state.scores.get(userId) ?? 0;
-
   const points = artistMatch && titleMatch ? 2 : 1;
   let bonus = 0;
   if (!state.firstCorrectUser) {
@@ -132,7 +162,6 @@ export async function handleGuess(message: Message, client: Client): Promise<voi
   }
 
   state.scores.set(userId, currentScore + points + bonus);
-
   const songInfo = state.currentSong;
   stopCurrentSong(guildId);
 
