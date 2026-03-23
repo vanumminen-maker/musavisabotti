@@ -1,6 +1,6 @@
 import { createAudioResource, StreamType } from '@discordjs/voice';
 import { Client, TextChannel } from 'discord.js';
-import ytdl from '@distube/ytdl-core';
+import { exec as ytdlexec } from 'youtube-dl-exec';
 import { checkGuess } from './fuzzy';
 import { getState, stopCurrentSong } from './state';
 import type { Message } from 'discord.js';
@@ -30,20 +30,24 @@ export async function startNextSong(
   state.currentSong = song;
   state.firstCorrectUser = null;
 
-  // Stream audio via @distube/ytdl-core
+  // Stream audio via youtube-dl-exec (yt-dlp)
   try {
-    const stream = ytdl(song.url, {
-      filter: 'audioonly',
-      highWaterMark: 1 << 25,
-      quality: 'highestaudio',
-    });
-    
-    // ytdl-core streams sometimes throw errors mid-playback
-    stream.on('error', (err) => {
-      console.error('Virhe toistettaessa videota:', err);
+    const subprocess = ytdlexec(song.url, {
+      output: '-',
+      format: 'bestaudio',
+      limitRate: '1M',
+      quiet: true,
+    }, { stdio: ['ignore', 'pipe', 'ignore'] });
+
+    if (!subprocess.stdout) {
+      throw new Error('yt-dlp failed to create a stdout stream');
+    }
+
+    subprocess.stdout.on('error', (err) => {
+      console.error('Virhe toistettaessa videota (yt-dlp stdout):', err);
     });
 
-    const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary });
+    const resource = createAudioResource(subprocess.stdout, { inputType: StreamType.Arbitrary });
     state.player!.play(resource);
   } catch (err) {
     console.error('Virhe äänivirran luomisessa:', err);
