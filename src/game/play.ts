@@ -14,11 +14,14 @@ const ROUND_DURATION_MS = 30_000;
  */
 async function extractWithYtDlp(url: string, cookieInput?: string): Promise<any> {
   return new Promise((resolve, reject) => {
+    // Strip playlist parameters to avoid format selection issues
+    const cleanUrl = url.split('&list=')[0].split('?list=')[0];
+
     const args = [
-      url,
+      cleanUrl,
       '--dump-single-json',
       '--no-playlist',
-      '--format', 'bestaudio/best',
+      '--format', 'ba/b',
       '--no-check-certificates',
       '--force-ipv4',
     ];
