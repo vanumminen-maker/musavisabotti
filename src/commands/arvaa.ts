@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from 'discord.js';
 import { processGuess } from '../game/play';
 
 export const data = new SlashCommandBuilder()
@@ -33,7 +33,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   // Julkinen ilmoitus kanavalle (ilman oikeaa vastausta)
   if (interaction.channel && interaction.channel.isTextBased()) {
-    await interaction.channel.send(
+    await (interaction.channel as TextChannel).send(
       `🎉 **${interaction.user.username}** sai pisteitä! (${result.partStr})${bonusStr}`,
     );
   }
