@@ -25,7 +25,7 @@ async function extractWithYtDlp(url: string, cookieInput?: string): Promise<any>
       '--no-check-certificates',
       '--force-ipv4',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      '--extractor-args', 'youtube:player_client=ios,tv,web_embedded',
+      '--extractor-args', 'youtube:player_client=android_vr',
     ];
 
     // If cookies are provided, write them in Netscape format
