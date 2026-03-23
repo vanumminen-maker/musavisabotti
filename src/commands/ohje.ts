@@ -18,6 +18,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           '`/lisää url [artisti] [kappale]` – Lisää biisi visaan',
           '`/musavisa` – Aloita oma visasi (30s per biisi)',
           '`/next` – Seuraava biisi',
+          '`/arvaa` – Arvaa biisi (Hienoa! Piilottaa vastauksen muilta)',
           '`/spoiler` – Paljasta vastaus (vain vetäjä)',
           '`/valmista` – Lopeta visa ja katso tulokset',
         ].join('\n'),

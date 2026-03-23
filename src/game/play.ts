@@ -95,7 +95,8 @@ export async function startNextSong(
     return { success: false, error: 'Visalistan biisit loppuivat!' };
   }
 
-  const song = state.currentQuizSongs[Math.floor(Math.random() * state.currentQuizSongs.length)];
+  const index = Math.floor(Math.random() * state.currentQuizSongs.length);
+  const song = state.currentQuizSongs.splice(index, 1)[0];
   state.currentSong = song;
   state.firstCorrectUser = null;
   state.solvedArtistBy = new Set();
@@ -141,59 +142,90 @@ export async function startNextSong(
   return { success: true };
 }
 
-export async function handleGuess(message: Message, client: Client): Promise<void> {
-  const guildId = message.guildId!;
-  const state = getState(guildId);
+export interface GuessResult {
+  points: number;
+  bonus: number;
+  partStr: string;
+  isNewSolve: boolean;
+  songInfo: { artist: string; title: string };
+}
 
-  if (!state.isActive || !state.currentSong) return;
-  if (message.channelId !== state.textChannelId) return;
+/**
+ * Prosessoi arvauksen ja palauttaa tulokset.
+ * Shared by message listener and /arvaa command.
+ */
+export function processGuess(guildId: string, userId: string, content: string): GuessResult | null {
+  const state = getState(guildId);
+  if (!state.isActive || !state.currentSong) return null;
 
   const { artistMatch, titleMatch } = checkGuess(
-    message.content,
+    content,
     state.currentSong.artist,
     state.currentSong.title,
   );
 
-  if (!artistMatch && !titleMatch) return;
+  if (!artistMatch && !titleMatch) return null;
 
-  // Jos viesti sisältää oikean vastauksen, poistetaan se heti jotta muut eivät näe sitä
-  await message.delete().catch(() => {});
-
-  const userId = message.author.id;
   const alreadySolvedArtist = state.solvedArtistBy.has(userId);
   const alreadySolvedTitle = state.solvedTitleBy.has(userId);
 
   let points = 0;
   let partStr = '';
+  let newSolvedArtist = false;
+  let newSolvedTitle = false;
 
   if (artistMatch && !alreadySolvedArtist) {
     state.solvedArtistBy.add(userId);
     points += 1;
+    newSolvedArtist = true;
     partStr = 'artisti';
   }
   if (titleMatch && !alreadySolvedTitle) {
     state.solvedTitleBy.add(userId);
     points += 1;
+    newSolvedTitle = true;
     partStr = partStr ? 'artisti & kappale' : 'kappale';
   }
 
-  // Jos käyttäjä ei saanut uusia pisteitä (arvasi jo aiemmin saman), ei vastata mitään
-  if (points === 0) return;
+  if (points === 0) return null;
 
-  const currentScore = state.scores.get(userId) ?? 0;
+  // Nopeusbonus vain, jos käyttäjä arvaa MOLEMMAT oikein yhdellä kertaa ekan kerran tälle biisille
   let bonus = 0;
-  if (!state.firstCorrectUser) {
+  const isFullMatch = artistMatch && titleMatch;
+  if (isFullMatch && !state.firstCorrectUser) {
     state.firstCorrectUser = userId;
     bonus = 1;
   }
 
+  const currentScore = state.scores.get(userId) ?? 0;
   state.scores.set(userId, currentScore + points + bonus);
-  const songInfo = state.currentSong;
+
+  return {
+    points,
+    bonus,
+    partStr,
+    isNewSolve: true,
+    songInfo: { 
+      artist: state.currentSong.artist, 
+      title: state.currentSong.title 
+    }
+  };
+}
+
+export async function handleGuess(message: Message, client: Client): Promise<void> {
+  if (!message.guildId) return;
+  
+  const result = processGuess(message.guildId, message.author.id, message.content);
+  if (!result) return;
+
+  // Jos viesti sisältää oikean vastauksen, poistetaan se heti
+  await message.delete().catch(() => {});
+
   const name = message.member?.displayName ?? message.author.username;
-  const bonusStr = bonus ? ' + ⚡ **nopeusbonus**' : '';
+  const bonusStr = result.bonus ? ' + ⚡ **nopeusbonus**' : '';
 
   await (message.channel as TextChannel).send(
-    `🎉 **${name}** arvasi oikein! (${partStr}) → **${points + bonus} pistettä**${bonusStr}\n` +
-      `🎵 Vastaus: ||${songInfo.artist} – ${songInfo.title}||`,
+    `🎉 **${name}** arvasi oikein! (${result.partStr}) → **${result.points + result.bonus} pistettä**${bonusStr}\n` +
+      `🎵 Vastaus: ||${result.songInfo.artist} – ${result.songInfo.title}||`,
   );
 }

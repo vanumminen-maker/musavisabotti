@@ -10,6 +10,7 @@ import * as nextCmd from './commands/next';
 import * as valmistaCmd from './commands/valmista';
 import * as leaderboardCmd from './commands/leaderboard';
 import * as ohjeCmd from './commands/ohje';
+import * as arvaaCmd from './commands/arvaa';
 import * as liityCmd from './commands/liity';
 import * as jonoCmd from './commands/jono';
 import * as skipCmd from './commands/skip';
@@ -30,6 +31,7 @@ const commandsData = [
   valmistaCmd,
   leaderboardCmd,
   ohjeCmd,
+  arvaaCmd,
   liityCmd,
   jonoCmd,
   skipCmd,
